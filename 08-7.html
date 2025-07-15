@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>근무현황표 생성기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .controls {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .controls label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .controls input[type="number"],
+        .controls select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 80px;
+        }
+        .controls input[type="radio"] {
+            margin-left: 15px;
+        }
+        .controls button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: top; /* 셀 내용이 위에서부터 정렬되도록 */
+            line-height: 1.4; /* 줄 간격 조절 */
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        caption {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+        .sunday {
+            background-color: #ffe0e0; /* 일요일 배경색 */
+        }
+        .saturday {
+            background-color: #e0e0ff; /* 토요일 배경색 */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <label for="yearInput">년:</label>
+        <input type="number" id="yearInput" value="2025" min="2000" max="2100">
+        <label for="monthInput">월:</label>
+        <input type="number" id="monthInput" value="8" min="1" max="12">
+        
+        <input type="radio" id="option1" name="displayOption" value="1" checked>
+        <label for="option1">1일 ~ 15일</label>
+        <input type="radio" id="option2" name="displayOption" value="2">
+        <label for="option2">16일 ~ 말일</label>
+        
+        <button onclick="generateSchedule()">근무현황표 생성</button>
+    </div>
+
+    <div id="scheduleContainer">
+        <caption id="tableCaption">종로 07번 2025년 08월 1일 ~ 15일까지 근무현황표</caption>
+        <table>
+            <thead>
+                <tr>
+                    <th>월일</th>
+                    <th>요일</th>
+                    <th>3613</th>
+                    <th>5518</th>
+                    <th>5537</th>
+                    <th>3612</th>
+                    <th>5536호</th>
+                    <th>기 타</th>
+                </tr>
+            </thead>
+            <tbody id="scheduleBody">
+                <!-- JavaScript로 내용이 채워집니다. -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 요일 인덱스를 한글 요일 이름으로 변환하는 함수
+        const getDayName = (dayIndex) => {
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            return days[dayIndex];
+        };
+
+        // 월의 마지막 날짜를 구하는 함수
+        const getLastDayOfMonth = (year, month) => {
+            return new Date(year, month, 0).getDate(); // 다음 달 0일은 현재 달의 마지막 날
+        };
+
+        // 근무현황표를 생성하는 함수
+        function generateSchedule() {
+            const year = parseInt(document.getElementById('yearInput').value);
+            const month = parseInt(document.getElementById('monthInput').value);
+            const selectedOption = document.querySelector('input[name="displayOption"]:checked').value;
+            const scheduleBody = document.getElementById('scheduleBody');
+            const tableCaption = document.getElementById('tableCaption');
+
+            let startDate, endDate;
+
+            if (selectedOption === '1') {
+                startDate = new Date(year, month - 1, 1);
+                endDate = new Date(year, month - 1, 15);
+            } else { // option 2
+                startDate = new Date(year, month - 1, 16);
+                endDate = new Date(year, month - 1, getLastDayOfMonth(year, month));
+            }
+
+            // 캡션 업데이트
+            tableCaption.textContent = `종로 07번 ${year}년 ${month}월 ${startDate.getDate()}일 ~ ${endDate.getDate()}일까지 근무현황표`;
+
+            // 기존 내용 초기화
+            scheduleBody.innerHTML = '';
+
+            // 초기 근무자 배열 설정
+            // 원본 파일의 7월 16일(수) 시작 상태
+            let initialNames3613 = ['강명희', '이미휴']; 
+            let initialNames5537 = ['정형택', '이기용']; 
+
+            // 기준 날짜: 2025년 7월 16일 (수요일)
+            const baseDate = new Date(2025, 6, 16); 
+            // 2025년 7월 21일 (월요일)은 첫 번째 로테이션이 시작되는 월요일
+            const firstRotationMonday = new Date(2025, 6, 21); 
+
+            // 현재 기간의 시작일이 속한 주의 로테이션 상태를 결정
+            // 7월 21일 월요일을 기준으로 몇 주가 지났는지 계산하여 초기 로테이션 상태를 결정합니다.
+            let currentNames3613 = [...initialNames3613];
+            let currentNames5537 = [...initialNames5537];
+
+            // 시작 날짜(startDate)가 속한 주의 월요일을 찾습니다.
+            let firstMondayOfCurrentPeriod = new Date(startDate);
+            while (firstMondayOfCurrentPeriod.getDay() !== 1) { // 월요일이 될 때까지 날짜를 뒤로 돌립니다.
+                firstMondayOfCurrentPeriod.setDate(firstMondayOfCurrentPeriod.getDate() - 1);
+                if (firstMondayOfCurrentPeriod < baseDate) { // baseDate 이전으로 가면 baseDate로 고정
+                    firstMondayOfCurrentPeriod = new Date(baseDate);
+                    break;
+                }
+            }
+
+            // firstRotationMonday (7/21)부터 firstMondayOfCurrentPeriod까지 몇 주가 지났는지 계산
+            const diffTime = firstMondayOfCurrentPeriod.getTime() - firstRotationMonday.getTime();
+            const weeksPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+            // 주차에 따라 초기 근무자 배열 순서를 뒤집습니다.
+            // 짝수 주차 (0, 2, 4...)는 initialNames 그대로
+            // 홀수 주차 (1, 3, 5...)는 initialNames를 뒤집은 순서
+            if (weeksPassed % 2 !== 0) {
+                currentNames3613.reverse();
+                currentNames5537.reverse();
+            }
+            
+            // 근무 현황 생성 루프
+            let currentDate = new Date(startDate);
+            while (currentDate.getTime() <= endDate.getTime()) { // 날짜 비교는 getTime()으로 정확하게
+                const day = currentDate.getDate();
+                const dayOfWeek = currentDate.getDay(); // 0:일, 1:월, ..., 6:토
+                const dayName = getDayName(dayOfWeek);
+
+                // 매주 월요일마다 근무자 순서 변경 (단, 현재 기간의 첫 월요일은 위에서 이미 초기화했으므로 제외)
+                if (dayOfWeek === 1 && currentDate.getTime() !== firstMondayOfCurrentPeriod.getTime()) {
+                    currentNames3613.reverse();
+                    currentNames5537.reverse();
+                }
+
+                let rowClass = '';
+                if (dayOfWeek === 0) { // 일요일
+                    rowClass = 'sunday';
+                } else if (dayOfWeek === 6) { // 토요일
+                    rowClass = 'saturday';
+                }
+
+                let cell3613 = '';
+                let cell5518 = '';
+                let cell5537 = '';
+                let cell3612 = '';
+                let cell5536ho = '';
+                let cellEtc = '';
+
+                if (dayOfWeek === 0) { // 일요일은 모든 칸 비움
+                    cell3613 = '';
+                    cell5518 = '';
+                    cell5537 = '';
+                    cell3612 = '';
+                    cell5536ho = '';
+                } else { // 평일 및 토요일
+                    cell3613 = currentNames3613.join('<br>');
+                    cell5518 = '권과장'; // 5518호는 권과장 고정
+
+                    if (dayOfWeek === 6) { // 토요일 5537호는 특별 규칙 적용
+                        cell5537 = '오인중<br>정형택';
+                    } else { // 평일 5537호는 로테이션 적용
+                        cell5537 = currentNames5537.join('<br>');
+                    }
+
+                    cell3612 = ''; // 3612호는 빈칸
+                    cell5536ho = ''; // 5536호는 빈칸
+                }
+
+                const row = `
+                    <tr class="${rowClass}">
+                        <td>${day}</td>
+                        <td>${dayName}</td>
+                        <td>${cell3613}</td>
+                        <td>${cell5518}</td>
+                        <td>${cell5537}</td>
+                        <td>${cell3612}</td>
+                        <td>${cell5536ho}</td>
+                        <td>${cellEtc}</td>
+                    </tr>
+                `;
+                scheduleBody.insertAdjacentHTML('beforeend', row);
+
+                currentDate.setDate(currentDate.getDate() + 1); // 다음 날짜로 이동
+            }
+        }
+
+        // 페이지 로드 시 초기 근무현황표 생성
+        document.addEventListener('DOMContentLoaded', generateSchedule);
+    </script>
+
+</body>
+</html>
