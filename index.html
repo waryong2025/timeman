@@ -1,323 +1,185 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>종로07번 요일별 차량 배정표</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-        }
-        #printableArea {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1.5rem;
-            background-color: white;
-        }
-        th, td {
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            text-align: center;
-            font-size: 0.875rem;
-        }
-        th {
-            background-color: #f9fafb;
-            color: #374151;
-            font-weight: 600;
-        }
-        td {
-            color: #1d4ed8;
-            font-weight: 500;
-        }
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            color: #1f2937;
-        }
-        h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            text-align: center;
-            color: #4b5563;
-            margin-bottom: 1.5rem;
-        }
-        .notes {
-            margin-top: 2rem;
-            padding: 1rem;
-            background-color: #f9fafb;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            color: #4b5563;
-        }
-        .notes p {
-            margin-bottom: 0.5rem;
-        }
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 1.5rem auto 0;
-        }
-        button {
-            background-color: #2563eb;
-            color: white;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            border: none;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #1d4ed8;
-        }
-        #pdfButton {
-            background-color: #16a34a;
-        }
-        #pdfButton:hover {
-            background-color: #15803d;
-        }
-        #resetButton {
-            background-color: #dc2626;
-        }
-        #resetButton:hover {
-            background-color: #b91c1c;
-        }
-        .overflow-container {
-            width: 100%;
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>배차표 (종로07번)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+    h3 {
+      font-size: 18px;
+      margin-top: 0;
+      color: gray;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      word-break: break-word;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+    td a {
+      color: blue;
+      text-decoration: none;
+    }
+    td a:hover {
+      text-decoration: underline;
+    }
+    .buttons {
+      margin: 20px 0;
+    }
+    .buttons button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+    }
+    .buttons button:hover {
+      background-color: #0056b3;
+    }
+
+    /* 인쇄 전용 스타일 */
+    @media print {
+      body {
+        margin: 0;
+      }
+      table {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div id="printableArea">
-            <h1 id="main-title">배차표</h1>
-            <h2>(2025년 종로07번)</h2>
-            <div class="overflow-container">
-                <table id="assignmentTable"></table>
-            </div>
-            <div class="notes">
-                <p><strong>주의)</strong> 오후 운행차량은 12시00분부터 운행하시길 부탁드립니다.</p>
-                <p>차량 5537호는 근무자 근태확인 후 마지막 차량으로 배차가 들어갑니다.</p>
-                <p>첫차 06:00 막차 22:00분입니다. <strong>( By InJoongOh ) </strong></p>
-            </div>
-        </div>
-        <div class="button-group">
-            <button id="regenerateButton">다시 배정</button>
-            <button id="pdfButton">PDF로 저장</button>
-            <button id="resetButton">다시 설정</button>
-        </div>
-    </div>
 
-    <script>
-        const days = ["월", "화", "수", "목", "금", "토", "일"];
-        const year = 2025;
-        const month = 9; // 9월부터 시작
+  <div id="headerArea">
+    <h1>배차표</h1>
+    <h3 id="subtitle"></h3>
+  </div>
 
-        // 2025년 법정 공휴일 (월/일)
-        const holidays = new Set([
-            "1/1", "1/28", "1/29", "1/30", "3/1", "5/5", "6/2", "6/6",
-            "8/15", "10/3", "10/6", "10/9", "12/25"
-        ]);
+  <div class="buttons">
+    <button onclick="generateSchedule()">재배정</button>
+    <button onclick="window.print()">인쇄</button>
+    <button onclick="savePDF()">저장</button>
+  </div>
 
-        function isHoliday(date) {
-            const dateString = `${date.getMonth() + 1}/${date.getDate()}`;
-            return holidays.has(dateString);
-        }
+  <div id="printArea">
+    <table id="scheduleTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>월</th>
+          <th>화</th>
+          <th>수</th>
+          <th>목</th>
+          <th>금</th>
+          <th>토</th>
+          <th>일</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="row1"><td><a href="#">1</a></td></tr>
+        <tr id="row2"><td><a href="#">2</a></td></tr>
+        <tr id="row3"><td><a href="#">3</a></td></tr>
+        <tr id="row4"><td><a href="#">4</a></td></tr>
+      </tbody>
+    </table>
+  </div>
 
-        const assignmentTable = document.getElementById("assignmentTable");
-        const regenerateButton = document.getElementById("regenerateButton");
-        const pdfButton = document.getElementById("pdfButton");
-        const resetButton = document.getElementById("resetButton");
-        const mainTitleElement = document.getElementById("main-title");
-        const secondTitleElement = document.querySelector('h2');
+  <script>
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
 
-        let currentAssignments = []; // 현재 배정표 데이터를 저장할 변수
+    function generateRowValues() {
+      // 정확히 3개 3613, 3개 5536 → 총 6칸만 생성 (일요일 제외)
+      let base = ["3613","3613","3613","5536","5536","5536"];
+      return shuffleArray(base);
+    }
 
-        // 배열 무작위 섞기
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+    function generateSchedule() {
+      document.getElementById("row1").innerHTML = '<td><a href="#">1</a></td>';
+      document.getElementById("row2").innerHTML = '<td><a href="#">2</a></td>';
+      document.getElementById("row3").innerHTML = '<td><a href="#">3</a></td>';
+      document.getElementById("row4").innerHTML = '<td><a href="#">4</a></td>';
 
-        // 차량 배정 로직
-        function generateAssignments() {
-            const assignments = [];
-            for (let i = 0; i < 4; i++) {
-                assignments[i] = Array(7).fill('');
-            }
+      let row1 = generateRowValues();
+      let row2;
 
-            // 고정 차량
-            assignments[2] = Array(7).fill(5518); 
-            assignments[3] = Array(7).fill(5537);
+      // 요일별 겹치지 않게 만들기
+      do {
+        row2 = generateRowValues();
+      } while (row2.some((val, idx) => val === row1[idx]));
 
-            // ID1, ID2에 5536, 3613 각각 3회 배치
-            let daysPool = [0,1,2,3,4,5]; // 월~토
-            daysPool = shuffleArray(daysPool);
+      // 1번 줄 삽입 (월~토 + 일요일은 공백)
+      row1.forEach(val => {
+        document.getElementById("row1").innerHTML += `<td><a href="#">${val}</a></td>`;
+      });
+      document.getElementById("row1").innerHTML += `<td></td>`; // 일요일 빈칸
 
-            // 5536 3회
-            for (let k = 0; k < 3; k++) {
-                const d = daysPool.pop();
-                assignments[0][d] = 5536;
-            }
+      // 2번 줄 삽입 (월~토 + 일요일은 공백)
+      row2.forEach(val => {
+        document.getElementById("row2").innerHTML += `<td><a href="#">${val}</a></td>`;
+      });
+      document.getElementById("row2").innerHTML += `<td></td>`; // 일요일 빈칸
 
-            // 3613 3회
-            for (let k = 0; k < 3; k++) {
-                const d = daysPool.pop();
-                assignments[0][d] = 3613;
-            }
+      // 3번 줄 고정 (월~토 5518, 일요일은 공백)
+      for (let i = 0; i < 6; i++) {
+        document.getElementById("row3").innerHTML += `<td><a href="#">5518</a></td>`;
+      }
+      document.getElementById("row3").innerHTML += `<td></td>`;
 
-            // 남은 칸은 랜덤 배정
-            for (let i = 0; i < 6; i++) {
-                if (assignments[0][i] === '') {
-                    assignments[0][i] = Math.random() > 0.5 ? 5536 : 3613;
-                }
-            }
+      // 4번 줄 고정 (월~토 5537, 일요일은 공백)
+      for (let i = 0; i < 6; i++) {
+        document.getElementById("row4").innerHTML += `<td><a href="#">5537</a></td>`;
+      }
+      document.getElementById("row4").innerHTML += `<td></td>`;
 
-            // ID2도 동일 규칙 적용
-            let daysPool2 = [0,1,2,3,4,5];
-            daysPool2 = shuffleArray(daysPool2);
+      // 상단 제목 (년도/월/노선 표시)
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      document.getElementById("subtitle").innerText = `${year}년 ${month}월 (종로07번)`;
+    }
 
-            for (let k = 0; k < 3; k++) {
-                const d = daysPool2.pop();
-                assignments[1][d] = 5536;
-            }
-            for (let k = 0; k < 3; k++) {
-                const d = daysPool2.pop();
-                assignments[1][d] = 3613;
-            }
-            for (let i = 0; i < 6; i++) {
-                if (assignments[1][i] === '') {
-                    assignments[1][i] = Math.random() > 0.5 ? 5536 : 3613;
-                }
-            }
+    function savePDF() {
+      const element = document.getElementById("printArea");
+      const opt = {
+        margin: 0.2,
+        filename: '배차표.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
 
-            // 일요일/공휴일 공란 처리
-            const startDate = new Date(year, month - 1, 1);
-            let currentDate = new Date(startDate);
-            
-            for (let dayIndex = 0; dayIndex < 30; dayIndex++) { 
-                const dayOfWeek = currentDate.getDay();
-                if (dayOfWeek === 0 || isHoliday(currentDate)) {
-                    let tempDate = new Date(year, month - 1, 1);
-                    let tempDayIndex = 0;
-                    while(tempDate.getTime() < currentDate.getTime()) {
-                        tempDate.setDate(tempDate.getDate() + 1);
-                        tempDayIndex++;
-                    }
-                    if (tempDayIndex < 7) {
-                        for(let carIndex = 0; carIndex < 4; carIndex++) {
-                            assignments[carIndex][tempDayIndex] = '';
-                        }
-                    }
-                }
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-            return assignments;
-        }
+    generateSchedule();
+  </script>
 
-        // 테이블 렌더링
-        function renderTable(assignments) {
-            assignmentTable.innerHTML = "";
-            if (!assignments) {
-                assignmentTable.innerHTML = "<tr><td colspan='8' style='color: red; font-weight: bold; padding: 20px;'>배정표를 생성할 수 없습니다.</td></tr>";
-                return;
-            }
-            const headerRow = assignmentTable.insertRow();
-            const emptyTh = document.createElement("th");
-            emptyTh.textContent = "ID";
-            headerRow.appendChild(emptyTh);
-            days.forEach(day => {
-                const th = document.createElement("th");
-                th.textContent = day;
-                headerRow.appendChild(th);
-            });
-            for (let carIndex = 0; carIndex < 4; carIndex++) {
-                const row = assignmentTable.insertRow();
-                const idCell = row.insertCell();
-                idCell.textContent = carIndex + 1;
-                assignments[carIndex].forEach(assignment => {
-                    const cell = row.insertCell();
-                    cell.textContent = assignment;
-                });
-            }
-        }
-
-        // 버튼 이벤트
-        regenerateButton.addEventListener("click", () => {
-            currentAssignments = generateAssignments();
-            renderTable(currentAssignments);
-        });
-        resetButton.addEventListener("click", () => {
-            currentAssignments = generateAssignments();
-            renderTable(currentAssignments);
-        });
-        pdfButton.addEventListener("click", async () => {
-            const { jsPDF } = window.jspdf;
-            const printableArea = document.getElementById("printableArea");
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            const filename = `종로07번_배차표_${year}${month}${day}_${hours}${minutes}${seconds}.pdf`;
-            const originalMainTitle = mainTitleElement.textContent;
-            const originalSecondTitle = secondTitleElement.textContent;
-            mainTitleElement.textContent = `종로07번 차량 배정표`;
-            secondTitleElement.textContent = `(${year}년 ${month}월 ${day}일)`;
-            html2canvas(printableArea, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = canvas.height * imgWidth / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                pdf.save(filename);
-                mainTitleElement.textContent = originalMainTitle;
-                secondTitleElement.textContent = originalSecondTitle;
-            });
-        });
-
-        // 초기 로드
-        document.addEventListener("DOMContentLoaded", () => {
-            currentAssignments = generateAssignments();
-            renderTable(currentAssignments);
-        });
-    </script>
 </body>
 </html>
