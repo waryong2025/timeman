@@ -1,112 +1,223 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>배차표 (종로07번)</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>요일별 차량 배정표 - 종로07번</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      text-align: center;
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
     }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 5px;
+    .container {
+      width: 100%;
+      max-width: 800px;
     }
-    h3 {
-      font-size: 18px;
-      margin-top: 0;
-      color: gray;
+    #printableArea {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
+      margin-top: 1.5rem;
+      background-color: white;
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+      padding: 0.75rem;
+      border: 1px solid #e5e7eb;
       text-align: center;
-      word-break: break-word;
+      font-size: 0.875rem;
     }
     th {
-      background-color: #f9f9f9;
+      background-color: #f9fafb;
+      color: #374151;
+      font-weight: 600;
     }
-    td a {
-      color: blue;
-      text-decoration: none;
+    td {
+      color: #1d4ed8;
+      font-weight: 500;
     }
-    td a:hover {
-      text-decoration: underline;
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      color: #1f2937;
     }
-    .buttons {
-      margin: 20px 0;
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      text-align: center;
+      color: #4b5563;
+      margin-bottom: 1.5rem;
     }
-    .buttons button {
-      margin: 5px;
-      padding: 10px 20px;
-      font-size: 14px;
-      border: none;
-      border-radius: 5px;
+    .notes {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #f9fafb;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      color: #4b5563;
+    }
+    .notes p {
+      margin-bottom: 0.5rem;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1.5rem auto 0;
+    }
+    /* 모든 버튼 스타일 통일: 파란색 배경, 흰색 글자 */
+    button, .home-button {
+      background-color: #2563eb; /* 통일된 파란색 배경 */
+      color: white; /* 흰색 글자 */
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
       cursor: pointer;
-      background-color: #007bff;
-      color: white;
+      border: none;
+      transition: background-color 0.3s;
+      text-align: center;
+      text-decoration: none; /* 링크 버튼에 필요 */
+      display: inline-block;
     }
-    .buttons button:hover {
-      background-color: #0056b3;
+    button:hover, .home-button:hover {
+      background-color: #1d4ed8; /* 호버 시 약간 어두운 파란색 */
+    }
+    
+    /* 홈 버튼 전용 스타일 */
+    #homeButton {
+        display: block;
+        width: 100%;
+        max-width: 800px;
+        margin-bottom: 1rem;
+        font-size: 1.25rem; /* 조금 큰 글자 크기 */
     }
 
-    /* 인쇄 전용 스타일 */
+    .overflow-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    /* -------------------------------------- */
+    /* 인쇄 전용 스타일 (A4에 꽉 차게 조정) */
+    /* -------------------------------------- */
     @media print {
       body {
+        background-color: white !important;
         margin: 0;
+        padding: 0;
+        min-height: initial;
+        display: block;
       }
+      .container {
+        max-width: none;
+        width: 100%;
+      }
+      #printableArea {
+        box-shadow: none !important;
+        border-radius: 0;
+        padding: 0.5cm;
+      }
+      .button-group, .notes, .home-button-wrapper {
+        display: none !important; /* 홈 버튼 포함 모든 버튼 숨김 */
+      }
+
+      /* 글꼴 및 테이블 크기 조정 */
+      h1 { font-size: 20pt; }
+      h2 { font-size: 14pt; }
       table {
-        page-break-inside: avoid;
+        margin-top: 1rem;
+        width: 100%; 
+        table-layout: fixed; 
+      }
+      th, td {
+        padding: 0.5rem;
+        font-size: 10pt; 
+        border: 1px solid black;
+      }
+      td {
+          color: #1f2937;
       }
     }
   </style>
 </head>
 <body>
-
-  <div id="headerArea">
-    <h1>배차표</h1>
-    <h3 id="subtitle"></h3>
+  <div class="home-button-wrapper">
+    <a href="https://waryong2025.github.io/main/" target="_blank" id="homeButton" class="home-button">
+      🏠 홈으로 돌아가기
+    </a>
   </div>
-
-  <div class="buttons">
-    <button onclick="generateSchedule()">재배정</button>
-    <button onclick="window.print()">인쇄</button>
-    <button onclick="savePDF()">저장</button>
-  </div>
-
-  <div id="printArea">
-    <table id="scheduleTable">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>월</th>
-          <th>화</th>
-          <th>수</th>
-          <th>목</th>
-          <th>금</th>
-          <th>토</th>
-          <th>일</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr id="row1"><td><a href="#">1</a></td></tr>
-        <tr id="row2"><td><a href="#">2</a></td></tr>
-        <tr id="row3"><td><a href="#">3</a></td></tr>
-        <tr id="row4"><td><a href="#">4</a></td></tr>
-      </tbody>
-    </table>
+  
+  <div class="container">
+    <div id="printableArea">
+      <h1 id="main-title">배차표</h1>
+      <h2 id="sub-title">(종로07번)</h2>
+      <div class="overflow-container">
+        <table id="assignmentTable"></table>
+      </div>
+      <div class="notes">
+        <p><strong>참고:</strong> 종로07번은 **월요일부터 토요일까지만 운행**하며, 일요일은 운휴입니다.</p>
+        <p>차량 배정은 월요일부터 토요일까지에만 적용됩니다.</p>
+        <p><strong> ( By InJoongOh )  </strong></p>
+      </div>
+    </div>
+    <div class="button-group">
+      <button id="regenerateButton">다시 배정</button> 
+      <button id="printButton">인쇄</button>
+      <button id="docxButton">DOCX로 저장</button>
+    </div>
   </div>
 
   <script>
+    const days = ["월", "화", "수", "목", "금", "토", "일"];
+    const carAssignmentsData = [
+      { id: 1, label: "1", type: "random" },
+      { id: 2, label: "2", type: "random" },
+      { id: 3, label: "3", type: "fixed", numbers: [5518] },
+      { id: 4, label: "4", type: "fixed", numbers: [5537] }
+    ];
+
+    const assignmentTable = document.getElementById("assignmentTable");
+    const regenerateButton = document.getElementById("regenerateButton");
+    const printButton = document.getElementById("printButton");
+    const docxButton = document.getElementById("docxButton");
+    const mainTitleElement = document.getElementById("main-title");
+    const subTitleElement = document.getElementById("sub-title");
+
+    let currentAssignments = []; 
+
+    /**
+     * 현재 년/월 정보를 객체로 반환합니다.
+     */
+    function getCurrentYearMonth() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        return { year, month };
+    }
+
+    /**
+     * 부제 텍스트를 현재 년월로 업데이트합니다.
+     */
+    function updateSubtitle() {
+        const { year, month } = getCurrentYearMonth();
+        // 부제 포맷을 "(YYYY년 MM월 종로07번)" 형식으로 업데이트
+        subTitleElement.textContent = `(${year}년 ${month}월 종로07번)`;
+    }
+
+    // 배열을 무작위로 섞는 함수 (Fisher-Yates shuffle)
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -115,71 +226,190 @@
       return array;
     }
 
+    /**
+     * 무작위 배차 행의 값(월~토)을 생성합니다. (3613 3개, 5536 3개)
+     */
     function generateRowValues() {
-      // 정확히 3개 3613, 3개 5536 → 총 6칸만 생성 (일요일 제외)
       let base = ["3613","3613","3613","5536","5536","5536"];
       return shuffleArray(base);
     }
 
-    function generateSchedule() {
-      document.getElementById("row1").innerHTML = '<td><a href="#">1</a></td>';
-      document.getElementById("row2").innerHTML = '<td><a href="#">2</a></td>';
-      document.getElementById("row3").innerHTML = '<td><a href="#">3</a></td>';
-      document.getElementById("row4").innerHTML = '<td><a href="#">4</a></td>';
+    /**
+     * 종로07번 배차 로직 (월~토 차량 겹침 방지)
+     */
+    function generateValidAssignments() {
+      // 1. ID 1과 2의 무작위 배차 생성
+      let row1Assignment = generateRowValues();
+      let row2Assignment;
 
-      let row1 = generateRowValues();
-      let row2;
-
-      // 요일별 겹치지 않게 만들기
+      // ID 1과 ID 2는 같은 요일에 동일 차량이 배정되지 않도록 검사
+      let MAX_ATTEMPTS = 100;
+      let attempt = 0;
       do {
-        row2 = generateRowValues();
-      } while (row2.some((val, idx) => val === row1[idx]));
+        row2Assignment = generateRowValues();
+        attempt++;
+        if (attempt > MAX_ATTEMPTS) {
+            console.error("ID 1과 2의 중복 없는 배차를 찾지 못했습니다.");
+            return null; 
+        }
+      } while (row2Assignment.some((val, idx) => val === row1Assignment[idx]));
 
-      // 1번 줄 삽입 (월~토 + 일요일은 공백)
-      row1.forEach(val => {
-        document.getElementById("row1").innerHTML += `<td><a href="#">${val}</a></td>`;
-      });
-      document.getElementById("row1").innerHTML += `<td></td>`; // 일요일 빈칸
+      // 2. ID 3과 4의 고정 배차 생성 (월~토 고정, 일 공백)
+      const fixedValue3 = carAssignmentsData[2].numbers[0];
+      const row3Assignment = Array(6).fill(fixedValue3); 
 
-      // 2번 줄 삽입 (월~토 + 일요일은 공백)
-      row2.forEach(val => {
-        document.getElementById("row2").innerHTML += `<td><a href="#">${val}</a></td>`;
-      });
-      document.getElementById("row2").innerHTML += `<td></td>`; // 일요일 빈칸
+      const fixedValue4 = carAssignmentsData[3].numbers[0];
+      const row4Assignment = Array(6).fill(fixedValue4); 
 
-      // 3번 줄 고정 (월~토 5518, 일요일은 공백)
-      for (let i = 0; i < 6; i++) {
-        document.getElementById("row3").innerHTML += `<td><a href="#">5518</a></td>`;
-      }
-      document.getElementById("row3").innerHTML += `<td></td>`;
+      // 3. 일요일(index 6)에 공백 추가하여 최종 결과 배열 생성
+      const finalAssignments = [];
+      
+      // ID 1
+      finalAssignments.push([...row1Assignment, ""]); 
+      // ID 2
+      finalAssignments.push([...row2Assignment, ""]); 
+      // ID 3
+      finalAssignments.push([...row3Assignment, ""]); 
+      // ID 4
+      finalAssignments.push([...row4Assignment, ""]); 
 
-      // 4번 줄 고정 (월~토 5537, 일요일은 공백)
-      for (let i = 0; i < 6; i++) {
-        document.getElementById("row4").innerHTML += `<td><a href="#">5537</a></td>`;
-      }
-      document.getElementById("row4").innerHTML += `<td></td>`;
-
-      // 상단 제목 (년도/월/노선 표시)
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1;
-      document.getElementById("subtitle").innerText = `${year}년 ${month}월 (종로07번)`;
+      return finalAssignments;
     }
 
-    function savePDF() {
-      const element = document.getElementById("printArea");
-      const opt = {
-        margin: 0.2,
-        filename: '배차표.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-      html2pdf().set(opt).from(element).save();
+    // 테이블 렌더링 함수
+    function renderTable(assignments) {
+      assignmentTable.innerHTML = ""; // 기존 내용 비우기
+
+      if (!assignments) {
+        assignmentTable.innerHTML = "<tr><td colspan='8' style='color: red; font-weight: bold; padding: 20px;'>배정표를 생성할 수 없습니다. 다시 시도해 주세요.</td></tr>";
+        return;
+      }
+
+      // 헤더 행 생성 (요일)
+      const headerRow = assignmentTable.insertRow();
+      const emptyTh = document.createElement("th");
+      emptyTh.textContent = "ID"; // 첫 번째 빈 칸
+      headerRow.appendChild(emptyTh);
+      days.forEach(day => {
+        const th = document.createElement("th");
+        th.textContent = day;
+        headerRow.appendChild(th);
+      });
+
+      // 데이터 행 생성
+      assignments.forEach((carDayAssignments, carIndex) => {
+        const row = assignmentTable.insertRow();
+        const idCell = row.insertCell();
+        // ID 셀은 01-07번의 링크 스타일을 제거하고, 08번의 디자인을 따릅니다.
+        idCell.textContent = carAssignmentsData[carIndex].label; 
+
+        carDayAssignments.forEach(assignment => {
+          const cell = row.insertCell();
+          cell.textContent = assignment;
+        });
+      });
     }
 
-    generateSchedule();
+    // DOCX 저장 함수 (A4 안정화 및 사용자 지정 스타일 적용) - 08배차-6 로직 유지
+    function exportTableToDocx(tableId) {
+        const table = document.getElementById(tableId);
+        const subTitleText = subTitleElement.textContent; // 현재 화면의 부제 가져오기
+        
+        // Word에서 잘 열리는 HTML 형식으로 저장 (.doc 확장자로)
+        const content = `
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    /* A4 안정화 조정 및 사용자 지정 스타일 */
+                    body { font-family: 'Malgun Gothic', 'Dotum', sans-serif; padding: 15px; }
+                    h1 { font-size: 20pt; text-align: center; margin-bottom: 5pt; }
+                    h2 { font-size: 14pt; text-align: center; margin-bottom: 15pt; }
+                    table { 
+                        border-collapse: collapse; 
+                        width: 90%; /* 넓이 90% 축소 */
+                        table-layout: fixed; 
+                        margin: 15px auto; /* 중앙 정렬 */
+                    }
+                    /* 헤더(요일)와 첫 번째 열(ID) 스타일: 굵게, 14pt, 굵은 선 */
+                    th {
+                        border: 2px solid black; /* 굵은 선 */
+                        padding: 6px; /* 높이 축소 (기존 0.75rem 약 12px -> 6px) */
+                        text-align: center; 
+                        font-size: 14pt; /* 14pt */
+                        font-weight: bold; /* 굵은 글자 */
+                        background-color: #f0f0f0; 
+                    }
+                    /* 데이터 셀 스타일: 차량 번호 12pt, 굵은 선 */
+                    td { 
+                        border: 2px solid black; /* 굵은 선 */
+                        padding: 6px; /* 높이 축소 */
+                        text-align: center; 
+                        font-size: 12pt; /* 12pt */
+                        color: #1f2937;
+                    }
+                    /* ID 셀 (첫 번째 열)만 14pt, 굵게 */
+                    table tr td:first-child { 
+                        font-size: 14pt; 
+                        font-weight: bold;
+                    }
+
+                    p { font-size: 10pt; } /* 주석 글자 크기 조정 */
+                </style>
+            </head>
+            <body>
+                <h1>${mainTitleElement.textContent}</h1>
+                <h2>${subTitleText}</h2> ${table.outerHTML}
+                <p style="margin-top: 30px;"><strong>참고:</strong> 종로07번은 월요일부터 토요일까지만 운행하며, 일요일은 운휴입니다.</p>
+                <p>차량 배정은 월요일부터 토요일까지에만 적용됩니다.</p>
+                <p><strong> ( By InJoongOh )  </strong></p>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob([content], {
+            type: 'application/msword;charset=utf-8'
+        });
+
+        // 날짜와 시간을 포함한 파일명 생성
+        const now = new Date();
+        const y = String(now.getFullYear());
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const h = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        const docxFilename = `차량 배정표_종로07번_${y}${m}${d}_${h}${min}${s}.doc`;
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = docxFilename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // 초기 로드 및 버튼 이벤트
+    regenerateButton.addEventListener("click", () => {
+      currentAssignments = generateValidAssignments();
+      renderTable(currentAssignments);
+    });
+
+    printButton.addEventListener("click", () => {
+      window.print(); // 브라우저 인쇄 기능 호출
+    });
+
+    docxButton.addEventListener("click", () => {
+      exportTableToDocx('assignmentTable');
+    });
+
+    // 페이지 로드 시 초기 배정표 생성 및 타이틀 업데이트
+    document.addEventListener("DOMContentLoaded", () => {
+      updateSubtitle(); // 페이지 로드 시 현재 년월이 포함된 부제 업데이트
+      currentAssignments = generateValidAssignments();
+      renderTable(currentAssignments);
+    });
   </script>
-
 </body>
 </html>
